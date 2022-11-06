@@ -3,4 +3,5 @@ kind: Redis
 metadata:
   name: myredis
 spec:
-  Port: 6379
+  port: 6379
+  num: 2

@@ -28,17 +28,24 @@ type RedisSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of Redis. Edit redis_types.go to remove/update
-	//Foo string `json:"foo,omitempty"`
+	// 自定义redis端口
+	// +kubebuilder:validation:Minimum:=81
+	// +kubebuilder:validation:Maximum:=10000
 	Port int `json:"port,omitempty"`
+	// 自定义redis数量
+	// +kubebuilder:validation:Minimum:=1
+	// +kubebuilder:validation:Maximum:=100
+	Num int `json:"num,omitempty"`
 }
 
 // RedisStatus defines the observed state of Redis
 type RedisStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	RedisNum int `json:"num"`
 }
 
+//+kubebuilder:printcolumn:JSONPath=".status.num",name=redisnum,type=integer
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 

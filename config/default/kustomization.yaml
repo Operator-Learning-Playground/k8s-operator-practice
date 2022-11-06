@@ -1,5 +1,5 @@
 # Adds namespace to all resources.
-namespace: k8s-operator-practice-easy-system
+namespace: k8s-operator-practice-easy-system  # 可以自选namespace
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
