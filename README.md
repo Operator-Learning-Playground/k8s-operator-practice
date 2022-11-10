@@ -1,95 +1,68 @@
-# k8s-operator-practice-easy
-// TODO(user): Add simple overview of use/purpose
+## 使用kubebuilder + kustomize实现k8s简易控制器
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+### 本项目实现思路：
+**通过k8s自定义资源CRD的方式**
+1. 利用**kubebuilder** + **kustomize**自动生成、管理应用配置实例。
+2. 以deployment形式布署到集群中。
+operator = CRD + wehook + controller 
+   
+### 控制器：
+k8s控制器对资源进行监听，如果有add/update/delete事件，会触发Reconcile方法响应。
 
-## Getting Started
-You’ll need a Kubernetes cluster to run against. You can use [KIND](https://sigs.k8s.io/kind) to get a local cluster for testing, or run against a remote cluster.
-**Note:** Your controller will automatically use the current context in your kubeconfig file (i.e. whatever cluster `kubectl cluster-info` shows).
+即为：**Reconcile loop**
 
-### Running on the cluster
-1. Install Instances of Custom Resources:
-
-```sh
-kubectl apply -f config/samples/
+### 项目步骤
+#### 第一步：kubebuilder初始化
+```bigquery
+kubebuilder init --domain jtthink.com
+kubebuilder create api --group myapp --version v1 --kind Redis
+```
+### 第二步：创建一个资源对象，用于测试
+```bigquery
+# test/redis.yaml
+apiVersion: myapp.jtthink.com/v1
+kind: Redis
+metadata:
+  name: myredis
+spec:
+    #这里是自定义的地方
+```
+接著可以在 /api下查看对应文件里的内容
+```bigquery
+api
+└── v1
+    ├── groupversion_info.go
+    ├── redis_types.go  # 主要关注对象 
+    └── zz_generated.deepcopy.go
 ```
 
-2. Build and push your image to the location specified by `IMG`:
+### 第三步：创建CRD
+```bigquery
+make install 
+# 如果报错，可以直接使用
+[root@vm-0-12-centos k8s-easy-operator]# kustomize build config/crd | kubectl apply -f -
+customresourcedefinition.apiextensions.k8s.io/redis.myapp.jtthink.com created
+```
+### 第四步：编写controller逻辑
+目录：**controllers/redis_controller.go**
+```bigquery
+// 在这里编写controller逻辑
+func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	_ = log.FromContext(ctx)
+
+	// TODO(user): your logic here
 	
-```sh
-make docker-build docker-push IMG=<some-registry>/k8s-operator-practice-easy:tag
+	return ctrl.Result{}, nil
+}
 ```
-	
-3. Deploy the controller to the cluster with the image specified by `IMG`:
+### 第五步：运行controller
+```bigquery
+make run 
+[root@vm-0-12-centos k8s-easy-operator]# make run
+/root/k8s-easy-operator/bin/controller-gen rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+/root/k8s-easy-operator/bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+go fmt ./...
+go vet ./...
+go run ./main.go
 
-```sh
-make deploy IMG=<some-registry>/k8s-operator-practice-easy:tag
 ```
-
-### Uninstall CRDs
-To delete the CRDs from the cluster:
-
-```sh
-make uninstall
-```
-
-### Undeploy controller
-UnDeploy the controller to the cluster:
-
-```sh
-make undeploy
-```
-
-## Contributing
-// TODO(user): Add detailed information on how you would like others to contribute to this project
-
-### How it works
-This project aims to follow the Kubernetes [Operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
-
-It uses [Controllers](https://kubernetes.io/docs/concepts/architecture/controller/) 
-which provides a reconcile function responsible for synchronizing resources untile the desired state is reached on the cluster 
-
-### Test It Out
-1. Install the CRDs into the cluster:
-
-```sh
-make install
-```
-
-2. Run your controller (this will run in the foreground, so switch to a new terminal if you want to leave it running):
-
-```sh
-make run
-```
-
-**NOTE:** You can also run this in one step by running: `make install run`
-
-### Modifying the API definitions
-If you are editing the API definitions, generate the manifests such as CRs or CRDs using:
-
-```sh
-make manifests
-```
-
-**NOTE:** Run `make --help` for more information on all potential `make` targets
-
-More information can be found via the [Kubebuilder Documentation](https://book.kubebuilder.io/introduction.html)
-
-## License
-
-Copyright 2022.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-
-# k8s-operator-practice

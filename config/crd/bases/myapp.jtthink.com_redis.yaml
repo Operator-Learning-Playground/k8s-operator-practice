@@ -15,7 +15,11 @@ spec:
     singular: redis
   scope: Namespaced
   versions:
-  - name: v1
+  - additionalPrinterColumns:
+    - jsonPath: .status.num
+      name: redisnum
+      type: integer
+    name: v1
     schema:
       openAPIV3Schema:
         description: k8s对象，新建一个Redis对象 Redis is the Schema for the redis API
@@ -35,13 +39,27 @@ spec:
           spec:
             description: RedisSpec defines the desired state of Redis
             properties:
+              num:
+                description: 自定义redis数量
+                maximum: 100
+                minimum: 1
+                type: integer
               port:
-                description: Foo is an example field of Redis. Edit redis_types.go
-                  to remove/update Foo string `json:"foo,omitempty"`
+                description: 自定义redis端口
+                maximum: 10000
+                minimum: 81
                 type: integer
             type: object
           status:
             description: RedisStatus defines the observed state of Redis
+            properties:
+              num:
+                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                  of cluster Important: Run "make" to regenerate code after modifying
+                  this file'
+                type: integer
+            required:
+            - num
             type: object
         type: object
     served: true

@@ -69,5 +69,6 @@ type RedisList struct {
 }
 
 func init() {
+	// 注册Scheme
 	SchemeBuilder.Register(&Redis{}, &RedisList{})	// 注册到scheme表中
 }
