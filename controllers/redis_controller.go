@@ -50,6 +50,8 @@ type RedisReconciler struct {
 //+kubebuilder:rbac:groups=myapp.jtthink.com,resources=redis,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=myapp.jtthink.com,resources=redis/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=myapp.jtthink.com,resources=redis/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -69,11 +71,12 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		//正在删
+		// 当前正在删
 		if !redis.DeletionTimestamp.IsZero() {
 			return ctrl.Result{}, r.clearRedis(ctx, redis)
 		}
 		//开始创建 拟 创建的pod
+		// 取到podNames
 		podNames := helper.GetRedisPodNames(redis)
 		isEdit := false
 		// 遍历 拟 创建的pod  挨个创建，如果已经创建则不做处理
@@ -85,10 +88,11 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			if pname == "" { // 已经存在 redis pod
 				continue
 			}
-			// 与我们写的 IsExistInFinalizers 方法是一样的，都是通过遍历，找到
+			// 与IsExistInFinalizers 方法是一样的，都是通过遍历，找到
 			if controllerutil.ContainsFinalizer(redis, pname) {
 				continue
 			}
+			// 把finalizers字段加入
 			redis.Finalizers = append(redis.Finalizers, pname)
 			isEdit = true
 		}
@@ -102,9 +106,13 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			}
 		}
 
-		if isEdit { // 是否发生了pod创建/收缩，如果没发生，就没必要 update资源
+		// TODO: 如果修改redis.yaml中的port，会有个问题就是redis crd已经修改，但是container里面的没有修改。
+
+		// 是否发生了pod创建/收缩，如果没发生，就没必要 update资源
+		if isEdit {
+			// 触发事件event
 			r.EventRecord.Event(redis, corev1.EventTypeNormal, "Updated", "更新myredis")
-			err := r.Client.Update(ctx, redis)
+			err := r.Client.Update(ctx, redis)	// 更新，一旦触发update，又会进入协调loop中，所以需要有 if pname == "" 的判断。
 			if err != nil {
 				return ctrl.Result{}, err
 			}
@@ -132,9 +140,11 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 func (r *RedisReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&myappv1.Redis{}).
-		Watches(&source.Kind{
+		Watches(&source.Kind{	// 加入监听。
 			Type: &v1.Pod{},
-		}, handler.Funcs{DeleteFunc: r.podDeleteHandler}).
+		}, handler.Funcs{
+			DeleteFunc: r.podDeleteHandler,
+		}).
 		Complete(r)
 }
 
@@ -149,7 +159,7 @@ func (r *RedisReconciler) clearRedis(ctx context.Context, redis *myappv1.Redis) 
 			fmt.Println("清除POD异常:", err)
 		}
 	}
-	redis.Finalizers = []string{}
+	redis.Finalizers = []string{} // finalizers清空
 	return r.Client.Update(ctx, redis)
 
 }
@@ -158,7 +168,7 @@ func (r *RedisReconciler) podDeleteHandler(event event.DeleteEvent, limitingInte
 	fmt.Println("被删除的对象名称是", event.Object.GetName())
 	for _, ref := range event.Object.GetOwnerReferences() {
 		if ref.Kind == "Redis" && ref.APIVersion == "myapp.jtthink.com/v1" {
-			// 重新入列
+			// 重新入列，这样删除pod后，就会进入调和loop，发现owerReference还在，会立即创建出新的pod。
 			limitingInterface.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: ref.Name,
 					Namespace: event.Object.GetNamespace()}})

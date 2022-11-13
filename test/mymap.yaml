@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mymap
+  # 练习finalizers 字段 需要用patch删除后才能真正删除此资源对象
+  #
+  finalizers:
+    - kubernetes

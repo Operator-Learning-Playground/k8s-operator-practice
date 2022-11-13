@@ -55,7 +55,7 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	return ctrl.Result{}, nil
 }
 ```
-### 第五步：运行controller
+### 第五步：运行controller (用于执行测试，不是发布deployment)
 ```bigquery
 make run 
 [root@vm-0-12-centos k8s-easy-operator]# make run
@@ -65,4 +65,12 @@ go fmt ./...
 go vet ./...
 go run ./main.go
 
+--------
+[root@vm-0-12-centos test]# kubectl apply -f redis.yaml
+```
+
+### 第六步：创建docker && 发布deployment
+```bigquery
+make docker-build docker-push
+make deploy
 ```

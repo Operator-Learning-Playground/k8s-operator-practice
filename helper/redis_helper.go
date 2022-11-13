@@ -11,10 +11,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
+// GetRedisPodNames 根据num数量，生成不同编号的名称，不然生成五个，名都一样会有冲突
 func GetRedisPodNames(redisConfig *v1.Redis) []string {
 	//根据副本数 生成 pod名称
 	podNames := make([]string, redisConfig.Spec.Num)
-	// redis-0 redis-1
+	// ex: redis-0 redis-1
 	for i := 0; i < redisConfig.Spec.Num; i++ {
 		podNames[i] = fmt.Sprintf("%s-%d", redisConfig.Name, i)
 	}
@@ -34,7 +35,7 @@ func IsExistPod(podName string, redis *v1.Redis, client client.Client) bool {
 }
 func IsExistInFinalizers(podName string, redis *v1.Redis) bool {
 	for _, po := range redis.Finalizers {
-		if podName == po {
+		if podName == po  {
 			return true
 		}
 	}
@@ -67,6 +68,7 @@ func IsExistInFinalizers(podName string, redis *v1.Redis) bool {
 //}
 
 // force 参数 强制创建，不判断是否在finalizers中 存在
+// CreateRedis 传入client podName，创建出一个pod。
 func CreateRedis(client client.Client,
 	redisConfig *v1.Redis, podName string, schema *runtime.Scheme) (string, error) {
 
@@ -81,6 +83,7 @@ func CreateRedis(client client.Client,
 	newpod.Name = podName
 	newpod.Namespace = redisConfig.Namespace
 
+	// 镜像
 	newpod.Spec.Containers = []corev1.Container{
 		{
 			//Name:            redisConfig.Name,
