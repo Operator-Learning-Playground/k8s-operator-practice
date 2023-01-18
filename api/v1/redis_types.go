@@ -32,6 +32,7 @@ type RedisSpec struct {
 	// +kubebuilder:validation:Minimum:=81
 	// +kubebuilder:validation:Maximum:=10000
 	Port int `json:"port,omitempty"`
+
 	// 自定义redis数量
 	// +kubebuilder:validation:Minimum:=1
 	// +kubebuilder:validation:Maximum:=100
@@ -52,11 +53,11 @@ type RedisStatus struct {
 // k8s对象，新建一个Redis对象
 // Redis is the Schema for the redis API
 type Redis struct {
-	metav1.TypeMeta   `json:",inline"`	// apiVersion kind
+	metav1.TypeMeta   `json:",inline"`            // apiVersion kind
 	metav1.ObjectMeta `json:"metadata,omitempty"` // 元数据
 
-	Spec   RedisSpec   `json:"spec,omitempty"`	// 自定义的地方
-	Status RedisStatus `json:"status,omitempty"`// 对象实际的状态数据
+	Spec   RedisSpec   `json:"spec,omitempty"`   // 自定义的地方
+	Status RedisStatus `json:"status,omitempty"` // 对象实际的状态数据
 }
 
 //+kubebuilder:object:root=true
@@ -69,6 +70,6 @@ type RedisList struct {
 }
 
 func init() {
-	// 注册Scheme
-	SchemeBuilder.Register(&Redis{}, &RedisList{})	// 注册到scheme表中
+
+	SchemeBuilder.Register(&Redis{}, &RedisList{}) // 注册到scheme表中
 }

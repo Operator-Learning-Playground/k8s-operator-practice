@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"k8s-operator-practice-easy/pkg/k8sconfig"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -65,7 +66,18 @@ func main() {
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	// 正式部署用
+	//mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	//	Scheme:                 scheme,
+	//	MetricsBindAddress:     metricsAddr,
+	//	Port:                   9443,
+	//	HealthProbeBindAddress: probeAddr,
+	//	LeaderElection:         enableLeaderElection,
+	//	LeaderElectionID:       "f870241f.jtthink.com",
+	//})
+
+	// 测试时用，连上云服务器环境
+	mgr, err := ctrl.NewManager(k8sconfig.K8sRestConfig(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
 		Port:                   9443,
@@ -73,19 +85,21 @@ func main() {
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "f870241f.jtthink.com",
 	})
+
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
 	if err = (&controllers.RedisReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:      mgr.GetClient(),
+		Scheme:      mgr.GetScheme(),
 		EventRecord: mgr.GetEventRecorderFor("myredis"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Redis")
 		os.Exit(1)
 	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
