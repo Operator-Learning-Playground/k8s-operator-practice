@@ -188,7 +188,7 @@ func (r *RedisController) podDeleteHandler(event event.DeleteEvent, limitingInte
 	}
 }
 
-// rmIfSurplus 收缩副本  ['redis0','redis1']   ---> podName ['redis0']
+// rmIfSurplus 收缩副本  ['redis0','redis1'] ---> podName ['redis0']
 func (r *RedisController) rmIfSurplus(ctx context.Context, poNames []string, redis *myappv1.Redis) error {
 	// Finalizers 列表 > podName 列表，开始删除
 	for i := 0; i < len(redis.Finalizers)-len(poNames); i++ {

@@ -1,7 +1,7 @@
 apiVersion: v1
 clusters:
 - cluster:
-    server: https://42.193.17.123:6443
+    server: https://xxxxxxx:6443
   name: kubernetes
 contexts:
 - context:
