@@ -66,8 +66,8 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	_ = log.FromContext(ctx)
 
 	// TODO(user): your logic here
-	redis := &myappv1.Redis{}
-	err := r.Get(ctx, req.NamespacedName, redis)
+	redis := &myappv1.Redis{} 	// 自定义对象
+	err := r.Get(ctx, req.NamespacedName, redis) // 取出一下，
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -75,11 +75,11 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		if !redis.DeletionTimestamp.IsZero() {
 			return ctrl.Result{}, r.clearRedis(ctx, redis)
 		}
-		//开始创建 拟 创建的pod
+		// 开始创建的pod
 		// 取到podNames
 		podNames := helper.GetRedisPodNames(redis)
 		isEdit := false
-		// 遍历 拟 创建的pod  挨个创建，如果已经创建则不做处理
+		// 遍历创建的pod 如果已经创建则不做处理
 		for _, po := range podNames {
 			pname, err := helper.CreateRedis(r.Client, redis, po, r.Scheme)
 			if err != nil { // 创建pods有错
@@ -96,7 +96,7 @@ func (r *RedisReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 			redis.Finalizers = append(redis.Finalizers, pname)
 			isEdit = true
 		}
-		//收缩 福本
+		//收缩副本
 		if len(redis.Finalizers) > len(podNames) {
 			r.EventRecord.Event(redis, corev1.EventTypeNormal, "Upgrade", "副本收缩")
 			isEdit = true
@@ -142,7 +142,7 @@ func (r *RedisReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&myappv1.Redis{}).
 		Watches(&source.Kind{	// 加入监听。
 			Type: &v1.Pod{},
-		}, handler.Funcs{
+		}, handler.Funcs{ // 如果有删除事件，重新加入queue
 			DeleteFunc: r.podDeleteHandler,
 		}).
 		Complete(r)
@@ -167,7 +167,7 @@ func (r *RedisReconciler) clearRedis(ctx context.Context, redis *myappv1.Redis) 
 func (r *RedisReconciler) podDeleteHandler(event event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
 	fmt.Println("被删除的对象名称是", event.Object.GetName())
 	for _, ref := range event.Object.GetOwnerReferences() {
-		if ref.Kind == "Redis" && ref.APIVersion == "myapp.jtthink.com/v1" {
+		if ref.Kind == myappv1.Kind && ref.APIVersion == myappv1.ApiVersion {
 			// 重新入列，这样删除pod后，就会进入调和loop，发现owerReference还在，会立即创建出新的pod。
 			limitingInterface.Add(reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: ref.Name,

@@ -28,6 +28,10 @@ var (
 	// GroupVersion is group version used to register these objects
 	GroupVersion = schema.GroupVersion{Group: "myapp.jtthink.com", Version: "v1"}
 
+	Kind = "Redis"
+
+	ApiVersion = "myapp.jtthink.com/v1"
+
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}
 
