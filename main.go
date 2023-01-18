@@ -91,7 +91,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.RedisReconciler{
+	if err = (&controllers.RedisController{
 		Client:      mgr.GetClient(),
 		Scheme:      mgr.GetScheme(),
 		EventRecord: mgr.GetEventRecorderFor("myredis"),

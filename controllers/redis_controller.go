@@ -18,8 +18,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
-	"k8s-operator-practice-easy/pkg/helper"
 	"k8s-operator-practice-easy/pkg/k8sutils"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
@@ -68,7 +66,7 @@ func (r *RedisController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	klog.Info("Request.Namespace: ", req.Namespace, "Request.Name: ", req.Name)
 	klog.Info("Reconciling the controller start!")
 
-	redis := &myappv1.Redis{}                    // 自定义对象
+	redis := &myappv1.Redis{} // 自定义对象
 	// 取出特定对象
 	err := r.Get(ctx, req.NamespacedName, redis)
 	if err != nil {
@@ -129,7 +127,7 @@ func (r *RedisController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	// 是否发生了pod创建/收缩，如果没发生，就没必要 update资源
 	if isEdit {
 		// 触发事件event
-		r.EventRecord.Event(redis, corev1.EventTypeNormal, "Updated", "update " + req.Name)
+		r.EventRecord.Event(redis, corev1.EventTypeNormal, "Updated", "update "+req.Name)
 		err := r.Client.Update(ctx, redis) // 更新，一旦触发update，又会进入协调loop中，所以需要有 if pname == "" 的判断。
 		if err != nil {
 			return ctrl.Result{}, err
@@ -142,9 +140,7 @@ func (r *RedisController) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 	return ctrl.Result{}, nil
 
-
 }
-
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedisController) SetupWithManager(mgr ctrl.Manager) error {
@@ -177,13 +173,16 @@ func (r *RedisController) clearRedis(ctx context.Context, redis *myappv1.Redis) 
 }
 
 func (r *RedisController) podDeleteHandler(event event.DeleteEvent, limitingInterface workqueue.RateLimitingInterface) {
-	klog.Info("被删除的对象名称是", event.Object.GetName())
 	for _, ref := range event.Object.GetOwnerReferences() {
 		if ref.Kind == myappv1.Kind && ref.APIVersion == myappv1.ApiVersion {
+			klog.Info("被删除的对象名称是", event.Object.GetName())
 			// 重新入列，这样删除pod后，就会进入调和loop，发现ownerReference还在，会立即创建出新的pod。
 			limitingInterface.Add(reconcile.Request{
-				NamespacedName: types.NamespacedName{Name: ref.Name,
-					Namespace: event.Object.GetNamespace()}})
+				NamespacedName: types.NamespacedName{
+					Name: ref.Name,
+					Namespace: event.Object.GetNamespace(),
+				},
+			})
 		}
 	}
 }
