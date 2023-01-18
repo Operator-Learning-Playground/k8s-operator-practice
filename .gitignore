@@ -24,3 +24,4 @@ testbin/*
 *.swp
 *.swo
 *~
+/resources
